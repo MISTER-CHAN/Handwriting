@@ -26,7 +26,7 @@ namespace Handwriting
         float column = 0, line = 0;
         ImageView ivCanvas;
         int charHeight = 0x80, HEIGHT, padding = 8, WIDTH;
-        readonly Paint paint = new Paint() { Color = Color.Black, StrokeWidth = 2 };
+        readonly Paint paint = new Paint() { StrokeWidth = 2 };
 
         protected override void OnCreate(Bundle savedInstanceState)
         {
@@ -173,6 +173,13 @@ namespace Handwriting
             if (bitmap == null)
                 Load();
             float x = e.Event.GetX(), y = e.Event.GetY();
+            if (isSelecting)
+            {
+                column = x - charHeight / 8;
+                line = y - charHeight / 2;
+                SetCursor(true);
+                return;
+            }
             switch (e.Event.Action)
             {
                 case MotionEventActions.Down:
@@ -181,23 +188,14 @@ namespace Handwriting
                     brushWidth = 0;
                     if (!isWriting)
                     {
-                        if (isSelecting)
-                        {
-                            column = x; line = y;
-                            SetCursor();
-                            return;
-                        }
-                        else
-                        {
-                            isWriting = true;
-                            paint.SetXfermode(new PorterDuffXfermode(PorterDuff.Mode.Clear));
-                            cBlank.DrawPaint(paint);
-                            paint.SetXfermode(null);
-                            cBlank.DrawBitmap(bDisplay, 0, 0, paint);
-                            cBlank.DrawColor(new Color(0xff, 0xff, 0xff, 0x7f));
-                            cBlank.DrawLine(0, TOP, ivCanvas.Width, TOP, paint);
-                            cBlank.DrawLine(0, BOTTOM, ivCanvas.Width, BOTTOM, paint);
-                        }
+                        isWriting = true;
+                        paint.SetXfermode(new PorterDuffXfermode(PorterDuff.Mode.Clear));
+                        cBlank.DrawPaint(paint);
+                        paint.SetXfermode(null);
+                        cBlank.DrawBitmap(bDisplay, 0, 0, paint);
+                        cBlank.DrawColor(new Color(0xff, 0xff, 0xff, 0x7f));
+                        cBlank.DrawLine(0, TOP, ivCanvas.Width, TOP, paint);
+                        cBlank.DrawLine(0, BOTTOM, ivCanvas.Width, BOTTOM, paint);
                     }
                     break;
                 case MotionEventActions.Move:
@@ -233,9 +231,7 @@ namespace Handwriting
                     prevY = y;
                     break;
                 case MotionEventActions.Up:
-                    if (isSelecting)
-                        return;
-                    break;
+                    return;
             }
             ivCanvas.SetImageBitmap(bBlank);
         }
@@ -364,14 +360,15 @@ namespace Handwriting
             brushColor = color;
         }
 
-        void SetCursor()
+        void SetCursor(bool style = false)
         {
-            Xfermode x = paint.Xfermode;
             paint.SetXfermode(new PorterDuffXfermode(PorterDuff.Mode.Clear));
             cDisplay.DrawPaint(paint);
-            paint.SetXfermode(x);
+            paint.SetXfermode(null);
             cDisplay.DrawBitmap(bText, 0, 0, paint);
-            cDisplay.DrawRect(column, line + charHeight - 8, column + charHeight / 2, line + charHeight, paint);
+            Paint p = new Paint() { StrokeWidth = 8 };
+            p.SetStyle(Paint.Style.Stroke);
+            cDisplay.DrawRect(column, style ? line : line + charHeight, column + charHeight / 2, line + charHeight, p);
             ivCanvas.SetImageBitmap(bDisplay);
         }
     }
