@@ -201,7 +201,7 @@ namespace Handwriting
                 case MotionEventActions.Move:
                     if (x < left)
                         left = (int)x;
-                    else if (x > right)
+                    if (x > right)
                         right = (int)x;
                     float d = (float)Math.Sqrt(Math.Pow(x - prevX, 2) + Math.Pow(y - prevY, 2)),
                         a = d / (float)Math.Pow(d, 2),
