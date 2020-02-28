@@ -10,13 +10,15 @@ using Android.Content;
 using Android.Provider;
 using Android.Database;
 using System.IO;
+using System.Threading;
+using System.Collections.Generic;
 
 namespace Handwriting
 {
     [Activity(Label = "@string/app_name", Theme = "@style/AppTheme", MainLauncher = true)]
     public class MainActivity : AppCompatActivity
     {
-        Bitmap bBlank, bDisplay, bitmap, blackBrush, bPaper, brush, bText;
+        Bitmap bBlank, bDisplay, bitmap, blackBrush, bPaper, brush, bText, redBrush;
         bool isSelecting = false, isWriting = false;
         Button bColor;
         Canvas canvas, cBlank, cDisplay, cText;
@@ -26,31 +28,9 @@ namespace Handwriting
         float column = 0, line = 0;
         ImageView ivCanvas;
         int charHeight = 0x80, HEIGHT, padding = 8, WIDTH;
+        List<Rect> dst = new List<Rect>();
         readonly Paint paint = new Paint() { StrokeWidth = 2 };
-
-        protected override void OnCreate(Bundle savedInstanceState)
-        {
-            base.OnCreate(savedInstanceState);
-            Xamarin.Essentials.Platform.Init(this, savedInstanceState);
-            // Set our view from the "main" layout resource
-            SetContentView(Resource.Layout.activity_main);
-
-            bColor = FindViewById<Button>(Resource.Id.b_color);
-            ivCanvas = FindViewById<ImageView>(Resource.Id.iv_canvas);
-
-            FindViewById<Button>(Resource.Id.b_backspace).Click += BBackspace_Click;
-            bColor.Click += BColor_Click;
-            FindViewById<Button>(Resource.Id.b_next).Click += BNext_Click;
-            FindViewById<Button>(Resource.Id.b_paper).Click += BPaper_Click;
-            FindViewById<Button>(Resource.Id.b_return).Click += BReturn_Click;
-            FindViewById<Button>(Resource.Id.b_space).Click += BSpace_Click;
-            ivCanvas.Touch += IvCanvas_Touch;
-            FindViewById<SeekBar>(Resource.Id.sb_height).ProgressChanged += SbHeight_ProgressChanged; ;
-            FindViewById<SeekBar>(Resource.Id.sb_width).ProgressChanged += SbWidth_ProgressChanged;
-
-            blackBrush = BitmapFactory.DecodeResource(Resources, Resource.Mipmap.brush);
-            brush = blackBrush.Copy(Bitmap.Config.Argb8888, true);
-        }
+        Thread drawBlank;
 
         private void BBackspace_Click(object sender, EventArgs e)
         {
@@ -92,12 +72,14 @@ namespace Handwriting
         {
             if (brushColor == Color.Black)
             {
-                SetBrushColor(Color.Red);
+                brush = redBrush.Copy(Bitmap.Config.Argb8888, true);
+                brushColor = Color.Red;
                 bColor.SetTextColor(Color.Red);
             }
             else
             {
-                SetBrushColor(Color.Black);
+                brush = blackBrush.Copy(Bitmap.Config.Argb8888, true);
+                brushColor = Color.Black;
                 bColor.SetTextColor(Color.Black);
             }
         }
@@ -142,6 +124,22 @@ namespace Handwriting
                 Next();
             column += charHeight / 4;
             SetCursor();
+        }
+
+        void DrawBlank()
+        {
+            while (true)
+            {
+                if (dst.Count <= 0)
+                    continue;
+                try
+                {
+                    canvas.DrawBitmap(brush, new Rect(0, 0, 192, 192), dst[0], paint);
+                    cBlank.DrawBitmap(brush, new Rect(0, 0, 192, 192), dst[0], paint);
+                }
+                catch { }
+                dst.RemoveAt(0);
+            }
         }
         public static string GetDataColumn(Context context, Android.Net.Uri uri, string selection, string[] selectionArgs)
         {
@@ -213,8 +211,7 @@ namespace Handwriting
                         for (float f = 0; f < d; f += 4)
                         {
                             w = a * (float)Math.Pow(f, 2) / d * (width - brushWidth) + brushWidth;
-                            canvas.DrawBitmap(brush, new Rect(0, 0, 192, 192), new Rect((int)(xpd * f + prevX - w), (int)(ypd * f + prevY - w), (int)(xpd * f + prevX + w), (int)(ypd * f + prevY + w)), paint);
-                            cBlank.DrawBitmap(brush, new Rect(0, 0, 192, 192), new Rect((int)(xpd * f + prevX - w), (int)(ypd * f + prevY - w), (int)(xpd * f + prevX + w), (int)(ypd * f + prevY + w)), paint);
+                            dst.Add(new Rect((int)(xpd * f + prevX - w), (int)(ypd * f + prevY - w), (int)(xpd * f + prevX + w), (int)(ypd * f + prevY + w)));
                         }
                     }
                     else
@@ -222,8 +219,7 @@ namespace Handwriting
                         for (float f = 0; f < d; f += 4)
                         {
                             w = (float)Math.Sqrt(f / a) / d * (width - brushWidth) + brushWidth;
-                            canvas.DrawBitmap(brush, new Rect(0, 0, 192, 192), new Rect((int)(xpd * f + prevX - w), (int)(ypd * f + prevY - w), (int)(xpd * f + prevX + w), (int)(ypd * f + prevY + w)), paint);
-                            cBlank.DrawBitmap(brush, new Rect(0, 0, 192, 192), new Rect((int)(xpd * f + prevX - w), (int)(ypd * f + prevY - w), (int)(xpd * f + prevX + w), (int)(ypd * f + prevY + w)), paint);
+                            dst.Add(new Rect((int)(xpd * f + prevX - w), (int)(ypd * f + prevY - w), (int)(xpd * f + prevX + w), (int)(ypd * f + prevY + w)));
                         }
                     }
                     brushWidth = w;
@@ -255,6 +251,7 @@ namespace Handwriting
             TOP = (HEIGHT - WIDTH) / 2;
             BOTTOM = TOP + WIDTH;
             SetCursor();
+            drawBlank.Start();
         }
 
         void Next()
@@ -315,6 +312,38 @@ namespace Handwriting
             }
         }
 
+        public override void OnBackPressed()
+        {
+            MoveTaskToBack(true);
+        }
+
+        protected override void OnCreate(Bundle savedInstanceState)
+        {
+            base.OnCreate(savedInstanceState);
+            Xamarin.Essentials.Platform.Init(this, savedInstanceState);
+            // Set our view from the "main" layout resource
+            SetContentView(Resource.Layout.activity_main);
+
+            bColor = FindViewById<Button>(Resource.Id.b_color);
+            ivCanvas = FindViewById<ImageView>(Resource.Id.iv_canvas);
+
+            FindViewById<Button>(Resource.Id.b_backspace).Click += BBackspace_Click;
+            bColor.Click += BColor_Click;
+            FindViewById<Button>(Resource.Id.b_next).Click += BNext_Click;
+            FindViewById<Button>(Resource.Id.b_paper).Click += BPaper_Click;
+            FindViewById<Button>(Resource.Id.b_return).Click += BReturn_Click;
+            FindViewById<Button>(Resource.Id.b_space).Click += BSpace_Click;
+            ivCanvas.Touch += IvCanvas_Touch;
+            FindViewById<SeekBar>(Resource.Id.sb_height).ProgressChanged += SbHeight_ProgressChanged; ;
+            FindViewById<SeekBar>(Resource.Id.sb_width).ProgressChanged += SbWidth_ProgressChanged;
+
+            redBrush = BitmapFactory.DecodeResource(Resources, Resource.Mipmap.brush_red);
+            blackBrush = BitmapFactory.DecodeResource(Resources, Resource.Mipmap.brush);
+            brush = blackBrush.Copy(Bitmap.Config.Argb8888, true);
+
+            drawBlank = new Thread(DrawBlank);
+        }
+
         public override void OnRequestPermissionsResult(int requestCode, string[] permissions, [GeneratedEnum] Android.Content.PM.Permission[] grantResults)
         {
             Xamarin.Essentials.Platform.OnRequestPermissionsResult(requestCode, permissions, grantResults);
@@ -345,6 +374,7 @@ namespace Handwriting
             {
                 return;
             }
+            
             int brushHeight = blackBrush.Height, brushWidth = blackBrush.Width;
             for (int i = 0; i < brushWidth; i++)
             {
