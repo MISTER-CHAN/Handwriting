@@ -28,9 +28,7 @@ namespace Handwriting
         float column = 0, line = 0;
         ImageView ivCanvas;
         int charHeight = 0x80, HEIGHT, padding = 8, WIDTH;
-        List<Rect> dst = new List<Rect>();
         readonly Paint paint = new Paint() { StrokeWidth = 2 };
-        Thread drawBlank;
 
         private void BBackspace_Click(object sender, EventArgs e)
         {
@@ -125,22 +123,6 @@ namespace Handwriting
             column += charHeight / 4;
             SetCursor();
         }
-
-        void DrawBlank()
-        {
-            while (true)
-            {
-                if (dst.Count <= 0)
-                    continue;
-                try
-                {
-                    canvas.DrawBitmap(brush, new Rect(0, 0, 192, 192), dst[0], paint);
-                    cBlank.DrawBitmap(brush, new Rect(0, 0, 192, 192), dst[0], paint);
-                }
-                catch { }
-                dst.RemoveAt(0);
-            }
-        }
         public static string GetDataColumn(Context context, Android.Net.Uri uri, string selection, string[] selectionArgs)
         {
 
@@ -204,14 +186,16 @@ namespace Handwriting
                     float d = (float)Math.Sqrt(Math.Pow(x - prevX, 2) + Math.Pow(y - prevY, 2)),
                         a = d / (float)Math.Pow(d, 2),
                         w = 0,
-                        width = (float)Math.Pow(1 - d / size, 6) * strokeWidth,
+                        width = (float)Math.Pow(1 - d / size, 8) * strokeWidth,
                         xpd = (x - prevX) / d, ypd = (y - prevY) / d;
                     if (width >= brushWidth)
                     {
                         for (float f = 0; f < d; f += 4)
                         {
                             w = a * (float)Math.Pow(f, 2) / d * (width - brushWidth) + brushWidth;
-                            dst.Add(new Rect((int)(xpd * f + prevX - w), (int)(ypd * f + prevY - w), (int)(xpd * f + prevX + w), (int)(ypd * f + prevY + w)));
+                            Rect r = new Rect((int)(xpd * f + prevX - w), (int)(ypd * f + prevY - w), (int)(xpd * f + prevX + w), (int)(ypd * f + prevY + w));
+                            canvas.DrawBitmap(brush, new Rect(0, 0, 192, 192), r, paint);
+                            cBlank.DrawBitmap(brush, new Rect(0, 0, 192, 192), r, paint);
                         }
                     }
                     else
@@ -219,7 +203,9 @@ namespace Handwriting
                         for (float f = 0; f < d; f += 4)
                         {
                             w = (float)Math.Sqrt(f / a) / d * (width - brushWidth) + brushWidth;
-                            dst.Add(new Rect((int)(xpd * f + prevX - w), (int)(ypd * f + prevY - w), (int)(xpd * f + prevX + w), (int)(ypd * f + prevY + w)));
+                            Rect r = new Rect((int)(xpd * f + prevX - w), (int)(ypd * f + prevY - w), (int)(xpd * f + prevX + w), (int)(ypd * f + prevY + w));
+                            canvas.DrawBitmap(brush, new Rect(0, 0, 192, 192), r, paint);
+                            cBlank.DrawBitmap(brush, new Rect(0, 0, 192, 192), r, paint);
                         }
                     }
                     brushWidth = w;
@@ -251,7 +237,6 @@ namespace Handwriting
             TOP = (HEIGHT - WIDTH) / 2;
             BOTTOM = TOP + WIDTH;
             SetCursor();
-            drawBlank.Start();
         }
 
         void Next()
@@ -340,8 +325,6 @@ namespace Handwriting
             redBrush = BitmapFactory.DecodeResource(Resources, Resource.Mipmap.brush_red);
             blackBrush = BitmapFactory.DecodeResource(Resources, Resource.Mipmap.brush);
             brush = blackBrush.Copy(Bitmap.Config.Argb8888, true);
-
-            drawBlank = new Thread(DrawBlank);
         }
 
         public override void OnRequestPermissionsResult(int requestCode, string[] permissions, [GeneratedEnum] Android.Content.PM.Permission[] grantResults)
