@@ -26,7 +26,7 @@
             android:layout_height="match_parent"
             android:id="@+id/sb_width"
 		    android:layout_weight="1"
-            android:max="64"
+            android:max="96"
             android:progress="48" />
     </LinearLayout>
     <LinearLayout

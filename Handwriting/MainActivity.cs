@@ -186,13 +186,13 @@ namespace Handwriting
                     float d = (float)Math.Sqrt(Math.Pow(x - prevX, 2) + Math.Pow(y - prevY, 2)),
                         a = d / (float)Math.Pow(d, 2),
                         w = 0,
-                        width = (float)Math.Pow(1 - d / size, 8) * strokeWidth,
+                        width = (float)Math.Pow(1 - d / size, 7) * strokeWidth,
                         xpd = (x - prevX) / d, ypd = (y - prevY) / d;
                     if (width >= brushWidth)
                     {
                         for (float f = 0; f < d; f += 4)
                         {
-                            w = a * (float)Math.Pow(f, 2) / d * (width - brushWidth) + brushWidth;
+                            w = a * (float)Math.Pow(f, 1.9) / d * (width - brushWidth) + brushWidth;
                             Rect r = new Rect((int)(xpd * f + prevX - w), (int)(ypd * f + prevY - w), (int)(xpd * f + prevX + w), (int)(ypd * f + prevY + w));
                             canvas.DrawBitmap(brush, new Rect(0, 0, 192, 192), r, paint);
                             cBlank.DrawBitmap(brush, new Rect(0, 0, 192, 192), r, paint);
@@ -202,7 +202,7 @@ namespace Handwriting
                     {
                         for (float f = 0; f < d; f += 4)
                         {
-                            w = (float)Math.Sqrt(f / a) / d * (width - brushWidth) + brushWidth;
+                            w = (float)Math.Pow(f / a, 1 / 1.9) / d * (width - brushWidth) + brushWidth;
                             Rect r = new Rect((int)(xpd * f + prevX - w), (int)(ypd * f + prevY - w), (int)(xpd * f + prevX + w), (int)(ypd * f + prevY + w));
                             canvas.DrawBitmap(brush, new Rect(0, 0, 192, 192), r, paint);
                             cBlank.DrawBitmap(brush, new Rect(0, 0, 192, 192), r, paint);
