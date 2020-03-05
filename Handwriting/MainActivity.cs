@@ -27,7 +27,7 @@ namespace Handwriting
         float brushWidth, prevX, prevY, ratio = 1.9f, size, strokeWidth = 48;
         float column = 0, line = 0;
         ImageView ivCanvas;
-        int charHeight = 0x80, handwriting = 7, HEIGHT, padding = 8, WIDTH;
+        int charHeight = 64, handwriting = 7, HEIGHT, padding = 8, WIDTH;
         LinearLayout llOptions;
         readonly Paint paint = new Paint() { StrokeWidth = 2 };
 
@@ -404,7 +404,6 @@ namespace Handwriting
             {
                 return;
             }
-            
             int brushHeight = blackBrush.Height, brushWidth = blackBrush.Width;
             for (int i = 0; i < brushWidth; i++)
             {
@@ -418,6 +417,7 @@ namespace Handwriting
                 }
             }
             brushColor = color;
+            bColor.SetTextColor(color);
         }
 
         void SetCursor(bool style = false)
