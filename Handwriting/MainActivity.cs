@@ -20,14 +20,15 @@ namespace Handwriting
     {
         Bitmap bBlank, bDisplay, bitmap, blackBrush, bPaper, brush, bText, redBrush;
         bool isSelecting = false, isWriting = false;
-        Button bColor;
+        Button bBackspace, bColor, bNext, bReturn, bSpace;
         Canvas canvas, cBlank, cDisplay, cText;
         Color brushColor = Color.Black;
         float BOTTOM, left, right, TOP;
-        float brushWidth, prevX, prevY, size, strokeWidth = 48;
+        float brushWidth, prevX, prevY, ratio = 1.9f, size, strokeWidth = 48;
         float column = 0, line = 0;
         ImageView ivCanvas;
-        int charHeight = 0x80, HEIGHT, padding = 8, WIDTH;
+        int charHeight = 0x80, handwriting = 7, HEIGHT, padding = 8, WIDTH;
+        LinearLayout llOptions;
         readonly Paint paint = new Paint() { StrokeWidth = 2 };
 
         private void BBackspace_Click(object sender, EventArgs e)
@@ -91,6 +92,28 @@ namespace Handwriting
             else
             {
                 isSelecting = !isSelecting;
+            }
+        }
+
+        private void BOptions_Click(object sender, EventArgs e)
+        {
+            if (llOptions.Visibility == ViewStates.Gone)
+            {
+                ivCanvas.Visibility = ViewStates.Gone;
+                bSpace.Visibility = ViewStates.Invisible;
+                bNext.Visibility = ViewStates.Invisible;
+                bBackspace.Visibility = ViewStates.Invisible;
+                bReturn.Visibility = ViewStates.Invisible;
+                llOptions.Visibility = ViewStates.Visible;
+            }
+            else
+            {
+                llOptions.Visibility = ViewStates.Gone;
+                bSpace.Visibility = ViewStates.Visible;
+                bNext.Visibility = ViewStates.Visible;
+                bBackspace.Visibility = ViewStates.Visible;
+                bReturn.Visibility = ViewStates.Visible;
+                ivCanvas.Visibility = ViewStates.Visible;
             }
         }
 
@@ -186,13 +209,13 @@ namespace Handwriting
                     float d = (float)Math.Sqrt(Math.Pow(x - prevX, 2) + Math.Pow(y - prevY, 2)),
                         a = d / (float)Math.Pow(d, 2),
                         w = 0,
-                        width = (float)Math.Pow(1 - d / size, 7) * strokeWidth,
+                        width = (float)Math.Pow(1 - d / size, handwriting) * strokeWidth,
                         xpd = (x - prevX) / d, ypd = (y - prevY) / d;
                     if (width >= brushWidth)
                     {
                         for (float f = 0; f < d; f += 4)
                         {
-                            w = a * (float)Math.Pow(f, 1.9) / d * (width - brushWidth) + brushWidth;
+                            w = a * (float)Math.Pow(f, ratio) / d * (width - brushWidth) + brushWidth;
                             Rect r = new Rect((int)(xpd * f + prevX - w), (int)(ypd * f + prevY - w), (int)(xpd * f + prevX + w), (int)(ypd * f + prevY + w));
                             canvas.DrawBitmap(brush, new Rect(0, 0, 192, 192), r, paint);
                             cBlank.DrawBitmap(brush, new Rect(0, 0, 192, 192), r, paint);
@@ -202,7 +225,7 @@ namespace Handwriting
                     {
                         for (float f = 0; f < d; f += 4)
                         {
-                            w = (float)Math.Pow(f / a, 1 / 1.9) / d * (width - brushWidth) + brushWidth;
+                            w = (float)Math.Pow(f / a, 1 / ratio) / d * (width - brushWidth) + brushWidth;
                             Rect r = new Rect((int)(xpd * f + prevX - w), (int)(ypd * f + prevY - w), (int)(xpd * f + prevX + w), (int)(ypd * f + prevY + w));
                             canvas.DrawBitmap(brush, new Rect(0, 0, 192, 192), r, paint);
                             cBlank.DrawBitmap(brush, new Rect(0, 0, 192, 192), r, paint);
@@ -309,17 +332,26 @@ namespace Handwriting
             // Set our view from the "main" layout resource
             SetContentView(Resource.Layout.activity_main);
 
+            bBackspace = FindViewById<Button>(Resource.Id.b_backspace);
             bColor = FindViewById<Button>(Resource.Id.b_color);
+            bNext = FindViewById<Button>(Resource.Id.b_next);
+            bReturn = FindViewById<Button>(Resource.Id.b_return);
+            bSpace = FindViewById<Button>(Resource.Id.b_space);
             ivCanvas = FindViewById<ImageView>(Resource.Id.iv_canvas);
+            llOptions = FindViewById<LinearLayout>(Resource.Id.ll_options);
 
-            FindViewById<Button>(Resource.Id.b_backspace).Click += BBackspace_Click;
+            bBackspace.Click += BBackspace_Click;
             bColor.Click += BColor_Click;
-            FindViewById<Button>(Resource.Id.b_next).Click += BNext_Click;
+            bNext.Click += BNext_Click;
+            FindViewById<Button>(Resource.Id.b_options).Click += BOptions_Click;
             FindViewById<Button>(Resource.Id.b_paper).Click += BPaper_Click;
-            FindViewById<Button>(Resource.Id.b_return).Click += BReturn_Click;
-            FindViewById<Button>(Resource.Id.b_space).Click += BSpace_Click;
+            bReturn.Click += BReturn_Click;
+            bSpace.Click += BSpace_Click;
             ivCanvas.Touch += IvCanvas_Touch;
-            FindViewById<SeekBar>(Resource.Id.sb_height).ProgressChanged += SbHeight_ProgressChanged; ;
+            FindViewById<SeekBar>(Resource.Id.sb_handwriting).ProgressChanged += SbHandwriting_ProgressChanged;
+            FindViewById<SeekBar>(Resource.Id.sb_height).ProgressChanged += SbHeight_ProgressChanged;
+            FindViewById<SeekBar>(Resource.Id.sb_padding).ProgressChanged += SbPadding_ProgressChanged;
+            FindViewById<SeekBar>(Resource.Id.sb_ratio).ProgressChanged += SbRatio_ProgressChanged;
             FindViewById<SeekBar>(Resource.Id.sb_width).ProgressChanged += SbWidth_ProgressChanged;
 
             redBrush = BitmapFactory.DecodeResource(Resources, Resource.Mipmap.brush_red);
@@ -334,6 +366,11 @@ namespace Handwriting
             base.OnRequestPermissionsResult(requestCode, permissions, grantResults);
         }
 
+        private void SbHandwriting_ProgressChanged(object sender, SeekBar.ProgressChangedEventArgs e)
+        {
+            handwriting = e.Progress;
+        }
+
         private void SbHeight_ProgressChanged(object sender, SeekBar.ProgressChangedEventArgs e)
         {
             if (bitmap == null)
@@ -345,6 +382,16 @@ namespace Handwriting
             ivCanvas.SetImageBitmap(bDisplay);
             cDisplay.Dispose();
             bDisplay.Dispose();
+        }
+
+        private void SbPadding_ProgressChanged(object sender, SeekBar.ProgressChangedEventArgs e)
+        {
+            padding = e.Progress;
+        }
+
+        private void SbRatio_ProgressChanged(object sender, SeekBar.ProgressChangedEventArgs e)
+        {
+            ratio = e.Progress / 10f;
         }
 
         private void SbWidth_ProgressChanged(object sender, SeekBar.ProgressChangedEventArgs e)

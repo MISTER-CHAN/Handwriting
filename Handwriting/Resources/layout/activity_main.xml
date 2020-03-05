@@ -5,7 +5,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-	android:orientation="vertical">
+	android:orientation="vertical"
+    android:gravity="bottom">
     <ImageView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -15,46 +16,125 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+		android:gravity="center"
+        android:id="@+id/ll_options"
+	    android:orientation="vertical"
+        android:visibility="gone">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+		    android:gravity="center">
+            <TextView
+                android:text="紙"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+		        android:layout_weight="5" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+		        android:layout_weight="1">
+                <Button
+                    android:text="選擇..."
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/b_paper" />
+            </LinearLayout>
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+		    android:gravity="center">
+            <TextView
+                android:text="筆觸軟度"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+		        android:layout_weight="5" />
+            <SeekBar
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:id="@+id/sb_handwriting"
+		        android:layout_weight="1"
+                android:max="10"
+                android:progress="7" />
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+		    android:gravity="center">
+            <TextView
+                android:text="過渡性"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+		        android:layout_weight="5" />
+            <SeekBar
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:id="@+id/sb_ratio"
+		        android:layout_weight="1"
+                android:max="20"
+                android:progress="19" />
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+		    android:gravity="center">
+            <TextView
+                android:text="列距"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+		        android:layout_weight="5" />
+            <SeekBar
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:id="@+id/sb_padding"
+		        android:layout_weight="1"
+                android:max="16"
+                android:progress="8" />
+        </LinearLayout>
+    </LinearLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
 		android:gravity="center">
         <TextView
-            android:text="Stroke Width"
+            android:text="筆畫寬度"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-		    android:layout_weight="3" />
+		    android:layout_weight="5" />
         <SeekBar
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:id="@+id/sb_width"
 		    android:layout_weight="1"
             android:max="96"
-            android:progress="48" />
+            android:progress="72" />
     </LinearLayout>
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
 		android:gravity="center">
         <TextView
-            android:text="Char Height"
+            android:text="字符髙度"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-		    android:layout_weight="3" />
+		    android:layout_weight="5" />
         <SeekBar
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:id="@+id/sb_height"
 		    android:layout_weight="1"
             android:max="128"
-            android:progress="128" />
+            android:progress="64" />
     </LinearLayout>
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
 		android:gravity="center">
         <Button
-            android:text="░"
+            android:text="..."
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:id="@+id/b_paper"
+            android:id="@+id/b_options"
 		    android:layout_weight="1" />
         <Button
             android:text="█"
