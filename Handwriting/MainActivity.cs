@@ -24,7 +24,7 @@ namespace Handwriting
         Canvas canvas, cBlank, cDisplay, cText;
         Color brushColor = Color.Black;
         float BOTTOM, left, right, TOP;
-        float brushWidth, prevX, prevY, ratio = 1.9f, size, strokeWidth = 48;
+        float brushWidth, prevX, prevY, ratio = 1.9f, size, strokeWidth = 72;
         float column = 0, line = 0;
         ImageView ivCanvas;
         int charHeight = 64, handwriting = 7, HEIGHT, padding = 8, WIDTH;
