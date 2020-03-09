@@ -20,6 +20,12 @@
         android:id="@+id/ll_options"
 	    android:orientation="vertical"
         android:visibility="gone">
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:id="@+id/iv_preview"
+            android:background="#ffffff"
+		    android:layout_weight="1" />
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -86,10 +92,86 @@
             <SeekBar
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:id="@+id/sb_padding"
+                android:id="@+id/sb_horizontal_gap"
 		        android:layout_weight="1"
                 android:max="16"
                 android:progress="8" />
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+		    android:gravity="center">
+            <TextView
+                android:text="行距"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+		        android:layout_weight="5" />
+            <SeekBar
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:id="@+id/sb_vertical_gap"
+		        android:layout_weight="1"
+                android:max="32"
+                android:progress="0" />
+        </LinearLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+		android:gravity="center">
+        <TextView
+            android:text="字符寬度"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+		    android:layout_weight="5" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+		        android:gravity="center"
+                android:layout_weight="1"
+                android:orientation="vertical">
+                <RadioGroup
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+		            android:layout_weight="2"
+                    android:orientation="horizontal">
+                    <RadioButton
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checked="true"
+                        android:text="自動"
+                        android:id="@+id/rb_char_width_auto" />
+                    <RadioButton
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="自訂"
+                        android:id="@+id/rb_char_width_custom" />
+                </RadioGroup>
+                <SeekBar
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:id="@+id/sb_char_width"
+		            android:layout_weight="1"
+                    android:max="128"
+                    android:progress="64"
+                    android:visibility="gone"/>
+            </LinearLayout>
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+		    android:gravity="center">
+            <TextView
+                android:text="字符髙度"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+		        android:layout_weight="5" />
+            <SeekBar
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:id="@+id/sb_char_height"
+		        android:layout_weight="1"
+                android:max="128"
+                android:progress="64" />
         </LinearLayout>
     </LinearLayout>
     <LinearLayout
@@ -104,27 +186,10 @@
         <SeekBar
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:id="@+id/sb_width"
+            android:id="@+id/sb_stroke_width"
 		    android:layout_weight="1"
             android:max="96"
             android:progress="72" />
-    </LinearLayout>
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-		android:gravity="center">
-        <TextView
-            android:text="字符髙度"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-		    android:layout_weight="5" />
-        <SeekBar
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:id="@+id/sb_height"
-		    android:layout_weight="1"
-            android:max="128"
-            android:progress="64" />
     </LinearLayout>
     <LinearLayout
         android:layout_width="match_parent"
