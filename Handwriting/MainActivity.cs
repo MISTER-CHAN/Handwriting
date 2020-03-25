@@ -107,7 +107,7 @@ namespace Handwriting
                 bReturn.Visibility = ViewStates.Invisible;
                 llOptions.Visibility = ViewStates.Visible;
                 if (bPreviewPaper == null)
-                    bPreviewPaper = Bitmap.CreateBitmap(cText.Width, cText.Height, Bitmap.Config.Argb8888);
+                    bPreviewPaper = Bitmap.CreateBitmap(ivCanvas.Width, ivCanvas.Height, Bitmap.Config.Argb8888);
             }
             else
             {
@@ -146,7 +146,8 @@ namespace Handwriting
                 Load();
             if (isWriting)
                 Next();
-            Space();
+            column += charHeight / 4;
+            SetCursor();
         }
         public static string GetDataColumn(Context context, Android.Net.Uri uri, string selection, string[] selectionArgs)
         {
@@ -505,12 +506,6 @@ namespace Handwriting
             p.SetStyle(Paint.Style.Stroke);
             cDisplay.DrawRect(column, style ? line : line + charHeight, column + (charWidth == -1 ? charHeight : charWidth), line + charHeight, p);
             ivCanvas.SetImageBitmap(bDisplay);
-        }
-
-        void Space(object states = null)
-        {
-            column += charHeight / 4;
-            SetCursor();
         }
     }
 }
