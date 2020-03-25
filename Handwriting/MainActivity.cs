@@ -19,15 +19,15 @@ namespace Handwriting
     public class MainActivity : AppCompatActivity
     {
         Bitmap bBlank, bDisplay, bitmap, blackBrush, bPaper, bPreview, bPreviewPaper, brush, bText, redBrush;
-        bool isSelecting = false, isWriting = false;
+        bool autoNewline = false, backspace = false, isSelecting = false, isWriting = false, space = false;
         Button bBackspace, bColor, bNext, bReturn, bSpace;
         Canvas canvas, cBlank, cDisplay, cPreview, cText;
         Color brushColor = Color.Black;
         float BOTTOM, left, right, TOP;
-        float brushWidth, prevX, prevY, previewX = 0, previewY = 0, ratio = 1.9f, size, strokeWidth = 72;
+        float brushWidth, prevX, prevY, previewX = 0, previewY = 0, ratio = 2f, size, strokeWidth = 72;
         float column = 0, line = 0;
         ImageView ivCanvas, ivPreview;
-        int charHeight = 64, charWidth = -1, handwriting = 7, HEIGHT, horizontalGap = 8, verticalGap = 0, WIDTH;
+        int charHeight = 64, charWidth = -1, handwriting = 6, HEIGHT, horizontalGap = 4, verticalGap = 0, WIDTH;
         LinearLayout llOptions;
         readonly Paint paint = new Paint() { StrokeWidth = 2 };
         SeekBar sbCharWidth;
@@ -106,6 +106,8 @@ namespace Handwriting
                 bBackspace.Visibility = ViewStates.Invisible;
                 bReturn.Visibility = ViewStates.Invisible;
                 llOptions.Visibility = ViewStates.Visible;
+                if (bPreviewPaper == null)
+                    bPreviewPaper = Bitmap.CreateBitmap(cText.Width, cText.Height, Bitmap.Config.Argb8888);
             }
             else
             {
@@ -144,8 +146,7 @@ namespace Handwriting
                 Load();
             if (isWriting)
                 Next();
-            column += charHeight / 4;
-            SetCursor();
+            Space();
         }
         public static string GetDataColumn(Context context, Android.Net.Uri uri, string selection, string[] selectionArgs)
         {
@@ -208,7 +209,7 @@ namespace Handwriting
                     if (x > right)
                         right = (int)x;
                     float d = (float)Math.Sqrt(Math.Pow(x - prevX, 2) + Math.Pow(y - prevY, 2)),
-                        a = d / (float)Math.Pow(d, 2),
+                        a = d / (float)Math.Pow(d, ratio),
                         w = 0,
                         width = (float)Math.Pow(1 - d / size, handwriting) * strokeWidth,
                         xpd = (x - prevX) / d, ypd = (y - prevY) / d;
@@ -281,12 +282,17 @@ namespace Handwriting
                     int charWidth = (int)((float)charHeight / WIDTH * (right - left));
                     bChar = Bitmap.CreateScaledBitmap(bChar, charWidth, (int)((float)charHeight / WIDTH * HEIGHT), true);
                     column += horizontalGap;
-                    if (column + charWidth > WIDTH)
+                    if (autoNewline && column + charWidth > WIDTH)
                     {
-                        column = 0;
                         line += charHeight + verticalGap;
+                        column = 0;
                     }
                     cText.DrawBitmap(bChar, column, line - (float)charHeight / WIDTH * TOP, paint);
+                    if (!autoNewline && column > WIDTH)
+                    {
+                        line += charHeight + verticalGap;
+                        column = 0;
+                    }
                     bChar.Dispose();
                     column += this.charWidth == -1 ? charWidth: this.charWidth;
                 }
@@ -323,9 +329,8 @@ namespace Handwriting
                     bPaper = Bitmap.CreateScaledBitmap(bPaper, cText.Width, cText.Height, true);
                     cText.DrawBitmap(bPaper, 0, 0, paint);
                     ivCanvas.SetImageBitmap(bText);
-                    bPreviewPaper = Bitmap.CreateBitmap(cText.Width, cText.Height / 2, Bitmap.Config.Argb8888);
                     new Canvas(bPreviewPaper).DrawBitmap(bPaper, 0, 0, paint);
-                    ivPreview.SetImageBitmap(bPreviewPaper);
+                    Preview();
                     SetCursor();
                 }
             }
@@ -364,6 +369,7 @@ namespace Handwriting
             ivPreview.Touch += IvPreview_Touch;
             FindViewById<RadioButton>(Resource.Id.rb_char_width_auto).CheckedChange += RbCharWidthAuto_CheckedChange;
             FindViewById<RadioButton>(Resource.Id.rb_char_width_custom).CheckedChange += RbCharWidthCustom_CheckedChange;
+            FindViewById<Switch>(Resource.Id.s_newline).CheckedChange += SNewline_CheckedChange;
             FindViewById<SeekBar>(Resource.Id.sb_char_height).ProgressChanged += SbCharHeight_ProgressChanged;
             sbCharWidth.ProgressChanged += SbCharWidth_ProgressChanged;
             FindViewById<SeekBar>(Resource.Id.sb_handwriting).ProgressChanged += SbHandwriting_ProgressChanged;
@@ -375,6 +381,7 @@ namespace Handwriting
             redBrush = BitmapFactory.DecodeResource(Resources, Resource.Mipmap.brush_red);
             blackBrush = BitmapFactory.DecodeResource(Resources, Resource.Mipmap.brush);
             brush = blackBrush.Copy(Bitmap.Config.Argb8888, true);
+
         }
 
         public override void OnRequestPermissionsResult(int requestCode, string[] permissions, [GeneratedEnum] Android.Content.PM.Permission[] grantResults)
@@ -421,6 +428,11 @@ namespace Handwriting
                 charWidth = sbCharWidth.Progress;
                 Preview();
             }
+        }
+
+        private void SNewline_CheckedChange(object sender, CompoundButton.CheckedChangeEventArgs e)
+        {
+            autoNewline = e.IsChecked;
         }
 
         private void SbCharHeight_ProgressChanged(object sender, SeekBar.ProgressChangedEventArgs e)
@@ -493,6 +505,12 @@ namespace Handwriting
             p.SetStyle(Paint.Style.Stroke);
             cDisplay.DrawRect(column, style ? line : line + charHeight, column + (charWidth == -1 ? charHeight : charWidth), line + charHeight, p);
             ivCanvas.SetImageBitmap(bDisplay);
+        }
+
+        void Space(object states = null)
+        {
+            column += charHeight / 4;
+            SetCursor();
         }
     }
 }
