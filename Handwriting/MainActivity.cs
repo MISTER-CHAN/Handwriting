@@ -24,7 +24,7 @@ namespace Handwriting
         Canvas canvas, cBlank, cDisplay, cPreview, cText;
         Color brushColor = Color.Black;
         float BOTTOM, left, right, TOP;
-        float brushWidth, prevX, prevY, previewX = 0, previewY = 0, ratio = 2f, size, strokeWidth = 72;
+        float alias = 4, brushWidth, prevX, prevY, previewX = 0, previewY = 0, ratio = 2f, size, strokeWidth = 72;
         float column = 0, line = 0;
         ImageView ivCanvas, ivPreview;
         int charHeight = 64, charWidth = -1, handwriting = 6, HEIGHT, horizontalGap = 4, verticalGap = 0, WIDTH;
@@ -216,7 +216,7 @@ namespace Handwriting
                         xpd = (x - prevX) / d, ypd = (y - prevY) / d;
                     if (width >= brushWidth)
                     {
-                        for (float f = 0; f < d; f += 4)
+                        for (float f = 0; f < d; f += alias)
                         {
                             w = a * (float)Math.Pow(f, ratio) / d * (width - brushWidth) + brushWidth;
                             Rect r = new Rect((int)(xpd * f + prevX - w), (int)(ypd * f + prevY - w), (int)(xpd * f + prevX + w), (int)(ypd * f + prevY + w));
@@ -226,7 +226,7 @@ namespace Handwriting
                     }
                     else
                     {
-                        for (float f = 0; f < d; f += 4)
+                        for (float f = 0; f < d; f += alias)
                         {
                             w = (float)Math.Pow(f / a, 1 / ratio) / d * (width - brushWidth) + brushWidth;
                             Rect r = new Rect((int)(xpd * f + prevX - w), (int)(ypd * f + prevY - w), (int)(xpd * f + prevX + w), (int)(ypd * f + prevY + w));
@@ -289,13 +289,13 @@ namespace Handwriting
                         column = 0;
                     }
                     cText.DrawBitmap(bChar, column, line - (float)charHeight / WIDTH * TOP, paint);
+                    bChar.Dispose();
+                    column += this.charWidth == -1 ? charWidth: this.charWidth;
                     if (!autoNewline && column > WIDTH)
                     {
                         line += charHeight + verticalGap;
                         column = 0;
                     }
-                    bChar.Dispose();
-                    column += this.charWidth == -1 ? charWidth: this.charWidth;
                 }
                 catch
                 {
@@ -371,6 +371,7 @@ namespace Handwriting
             FindViewById<RadioButton>(Resource.Id.rb_char_width_auto).CheckedChange += RbCharWidthAuto_CheckedChange;
             FindViewById<RadioButton>(Resource.Id.rb_char_width_custom).CheckedChange += RbCharWidthCustom_CheckedChange;
             FindViewById<Switch>(Resource.Id.s_newline).CheckedChange += SNewline_CheckedChange;
+            FindViewById<SeekBar>(Resource.Id.sb_alias).ProgressChanged += SbAlias_ProgressChanged;
             FindViewById<SeekBar>(Resource.Id.sb_char_height).ProgressChanged += SbCharHeight_ProgressChanged;
             sbCharWidth.ProgressChanged += SbCharWidth_ProgressChanged;
             FindViewById<SeekBar>(Resource.Id.sb_handwriting).ProgressChanged += SbHandwriting_ProgressChanged;
@@ -383,6 +384,11 @@ namespace Handwriting
             blackBrush = BitmapFactory.DecodeResource(Resources, Resource.Mipmap.brush);
             brush = blackBrush.Copy(Bitmap.Config.Argb8888, true);
 
+        }
+
+        private void SbAlias_ProgressChanged(object sender, SeekBar.ProgressChangedEventArgs e)
+        {
+            alias = e.Progress;
         }
 
         public override void OnRequestPermissionsResult(int requestCode, string[] permissions, [GeneratedEnum] Android.Content.PM.Permission[] grantResults)
