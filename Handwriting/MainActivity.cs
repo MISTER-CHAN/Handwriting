@@ -18,10 +18,10 @@ namespace Handwriting
     [Activity(Label = "@string/app_name", Theme = "@style/AppTheme", MainLauncher = true)]
     public class MainActivity : AppCompatActivity
     {
-        Bitmap bBlank, bDisplay, bitmap, blackBrush, bPaper, bPreview, bPreviewPaper, brush, bText, redBrush;
+        Bitmap bBlank, bChar, bDisplay, bitmap, blackBrush, bPaper, bPreview, bPreviewPaper, brush, bText, redBrush;
         bool autoNewline = false, backspace = false, isSelecting = false, isWriting = false, space = false;
         Button bBackspace, bColor, bNext, bReturn, bSpace;
-        Canvas canvas, cBlank, cDisplay, cPreview, cText;
+        Canvas canvas, cBlank, cChar, cDisplay, cPreview, cText;
         Color brushColor = Color.Black;
         float BOTTOM, left, right, TOP;
         float alias = 8, brushWidth, prevX, prevY, previewX = 0, previewY = 0, ratio = 2f, size, strokeWidth = 72;
@@ -259,6 +259,8 @@ namespace Handwriting
             canvas = new Canvas(bitmap);
             bBlank = Bitmap.CreateBitmap(bitmap);
             cBlank = new Canvas(bBlank);
+            bChar = Bitmap.CreateBitmap(WIDTH, HEIGHT, Bitmap.Config.Argb8888);
+            cChar = new Canvas(bChar);
             bText = Bitmap.CreateBitmap(WIDTH, HEIGHT, Bitmap.Config.Argb8888);
             cText = new Canvas(bText);
             bDisplay = Bitmap.CreateBitmap(bText);
@@ -279,9 +281,11 @@ namespace Handwriting
             {
                 try
                 {
-                    Bitmap bChar = Bitmap.CreateBitmap(bitmap, (int)left, 0, (int)(right - left), HEIGHT);
+                    paint.SetXfermode(new PorterDuffXfermode(PorterDuff.Mode.Clear));
+                    cChar.DrawPaint(paint);
+                    paint.SetXfermode(null);
                     int charWidth = (int)((float)charHeight / WIDTH * (right - left));
-                    bChar = Bitmap.CreateScaledBitmap(bChar, charWidth, (int)((float)charHeight / WIDTH * HEIGHT), true);
+                    cChar.DrawBitmap(bitmap, new Rect((int)left, 0, (int)right, HEIGHT), new Rect(0, 0, charWidth, (int)((float)charHeight / WIDTH * HEIGHT)), paint);
                     column += horizontalGap;
                     if (autoNewline && column + charWidth > WIDTH)
                     {
@@ -289,7 +293,6 @@ namespace Handwriting
                         column = 0;
                     }
                     cText.DrawBitmap(bChar, column, line - (float)charHeight / WIDTH * TOP, paint);
-                    bChar.Dispose();
                     column += this.charWidth == -1 ? charWidth: this.charWidth;
                     if (!autoNewline && column > WIDTH)
                     {
