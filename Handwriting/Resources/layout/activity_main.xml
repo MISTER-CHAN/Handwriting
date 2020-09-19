@@ -83,8 +83,8 @@
                 android:layout_height="match_parent"
                 android:id="@+id/sb_handwriting"
 		        android:layout_weight="1"
-                android:max="10"
-                android:progress="6" />
+                android:max="30"
+                android:progress="16" />
         </LinearLayout>
         <LinearLayout
             android:layout_width="match_parent"
@@ -236,8 +236,8 @@
             android:layout_height="match_parent"
             android:id="@+id/sb_stroke_width"
 		    android:layout_weight="1"
-            android:max="96"
-            android:progress="72" />
+            android:max="128"
+            android:progress="96" />
     </LinearLayout>
     <LinearLayout
         android:layout_width="match_parent"

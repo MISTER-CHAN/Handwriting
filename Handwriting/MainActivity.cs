@@ -24,10 +24,10 @@ namespace Handwriting
         Canvas canvas, cBlank, cChar, cDisplay, cPreview, cText;
         Color brushColor = Color.Black;
         float BOTTOM, left, right, TOP;
-        float alias = 8, brushWidth, prevX, prevY, previewX = 0, previewY = 0, ratio = 2f, size, strokeWidth = 72;
+        float alias = 8, brushWidth, prevX, prevY, previewX = 0, previewY = 0, ratio = 2f, size, strokeWidth = 96;
         float column = 0, line = 0;
         ImageView ivCanvas, ivPreview;
-        int charHeight = 64, charWidth = -1, handwriting = 6, HEIGHT, horizontalGap = 4, verticalGap = 0, WIDTH;
+        int charHeight = 64, charWidth = -1, handwriting = 16, HEIGHT, horizontalGap = 4, verticalGap = 0, WIDTH;
         LinearLayout llOptions;
         readonly Paint paint = new Paint() { StrokeWidth = 2 };
         SeekBar sbCharWidth;
