@@ -23,12 +23,13 @@ namespace Handwriting
         Button bBackspace, bColor, bNext, bReturn, bSpace;
         Canvas canvas, cBlank, cChar, cDisplay, cPreview, cText;
         Color brushColor = Color.Black;
-        float BOTTOM, left, right, TOP;
+        float BOTTOM, bottom, left, right, TOP, top;
         float alias = 8, brushWidth, prevX, prevY, previewX = 0, previewY = 0, ratio = 2f, size, strokeWidth = 96;
         float column = 0, line = 0;
         ImageView ivCanvas, ivPreview;
         int charHeight = 64, charWidth = -1, handwriting = 16, HEIGHT, horizontalGap = 4, verticalGap = 0, WIDTH;
         LinearLayout llOptions;
+        Matrix matrix = new Matrix();
         readonly Paint paint = new Paint() { StrokeWidth = 2 };
         SeekBar sbCharWidth;
 
@@ -134,10 +135,13 @@ namespace Handwriting
             if (bitmap == null)
                 Load();
             if (isWriting)
-                Next();
-            column = 0;
-            line += charHeight + verticalGap;
-            SetCursor();
+                Next(true);
+            else
+            {
+                column = 0;
+                line += charHeight + verticalGap;
+                SetCursor();
+            }
         }
 
         private void BSpace_Click(object sender, EventArgs e)
@@ -209,6 +213,10 @@ namespace Handwriting
                         left = (int)x;
                     if (x > right)
                         right = (int)x;
+                    if (y < top)
+                        top = (int)y;
+                    if (y > bottom)
+                        bottom = (int)y;
                     float d = (float)Math.Sqrt(Math.Pow(x - prevX, 2) + Math.Pow(y - prevY, 2)),
                         a = d / (float)Math.Pow(d, ratio),
                         w = 0,
@@ -257,6 +265,7 @@ namespace Handwriting
             HEIGHT = ivCanvas.Height;
             bitmap = Bitmap.CreateBitmap(WIDTH, HEIGHT, Bitmap.Config.Argb8888);
             canvas = new Canvas(bitmap);
+            matrix.SetRotate(-90, bitmap.Width / 2, bitmap.Height / 2);
             bBlank = Bitmap.CreateBitmap(bitmap);
             cBlank = new Canvas(bBlank);
             bChar = Bitmap.CreateBitmap(WIDTH, HEIGHT, Bitmap.Config.Argb8888);
@@ -269,12 +278,14 @@ namespace Handwriting
             size = (float)Math.Sqrt(Math.Pow(WIDTH, 2) + Math.Pow(HEIGHT, 2));
             left = WIDTH;
             right = 0;
+            top = HEIGHT;
+            bottom = 0;
             TOP = (HEIGHT - WIDTH) / 2;
             BOTTOM = TOP + WIDTH;
             SetCursor();
         }
 
-        void Next()
+        void Next(bool rotate = false)
         {
             isWriting = false;
             if (right > left)
@@ -284,16 +295,30 @@ namespace Handwriting
                     paint.SetXfermode(new PorterDuffXfermode(PorterDuff.Mode.Clear));
                     cChar.DrawPaint(paint);
                     paint.SetXfermode(null);
-                    int charWidth = (int)((float)charHeight / WIDTH * (right - left));
-                    cChar.DrawBitmap(bitmap, new Rect((int)left, 0, (int)right, HEIGHT), new Rect(0, 0, charWidth, (int)((float)charHeight / WIDTH * HEIGHT)), paint);
+                    int charWidth = 0;
+                    if (rotate)
+                    {
+                        charWidth = (int)((float)charHeight / WIDTH * (bottom - top));
+                        Bitmap b = Bitmap.CreateBitmap(bitmap, 0, 0, bitmap.Width, bitmap.Height, matrix, true);
+                        cChar.DrawBitmap(b, new Rect((int)top, 0, (int)bottom, HEIGHT), new Rect(0, 0, charWidth, (int)((float)charHeight / WIDTH * HEIGHT)), paint);
+                        b.Dispose();
+                    }
+                    else
+                    {
+                        charWidth = (int)((float)charHeight / WIDTH * (right - left));
+                        cChar.DrawBitmap(bitmap, new Rect((int)left, 0, (int)right, HEIGHT), new Rect(0, 0, charWidth, (int)((float)charHeight / WIDTH * HEIGHT)), paint);
+                    }
                     column += horizontalGap;
                     if (autoNewline && column + charWidth > WIDTH)
                     {
                         line += charHeight + verticalGap;
                         column = 0;
                     }
-                    cText.DrawBitmap(bChar, column, line - (float)charHeight / WIDTH * TOP, paint);
-                    column += this.charWidth == -1 ? charWidth: this.charWidth;
+                    if (rotate)
+                        cText.DrawBitmap(bChar, column, line, paint);
+                    else
+                        cText.DrawBitmap(bChar, column, line - (float)charHeight / WIDTH * TOP, paint);
+                    column += this.charWidth == -1 ? charWidth : this.charWidth;
                     if (!autoNewline && column > WIDTH)
                     {
                         line += charHeight + verticalGap;
@@ -311,6 +336,8 @@ namespace Handwriting
             SetCursor();
             left = ivCanvas.Width;
             right = 0;
+            top = ivCanvas.Height;
+            bottom = 0;
         }
         protected override void OnActivityResult(int requestCode, [GeneratedEnum] Result ResultStatus, Intent data)
         {
