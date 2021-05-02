@@ -19,12 +19,12 @@ namespace Handwriting
     public class MainActivity : AppCompatActivity
     {
         Bitmap bBlank, bChar, bDisplay, bitmap, blackBrush, bPaper, bPreview, bPreviewPaper, brush, bText, redBrush;
-        bool autoNewline = false, backspace = false, isSelecting = false, isWriting = false, space = false;
+        bool autoNewline = false, backspace = false, isSelecting = false, isWriting = false, next = false, space = false;
         Button bBackspace, bColor, bNext, bReturn, bSpace;
         Canvas canvas, cBlank, cChar, cDisplay, cPreview, cText;
         Color brushColor = Color.Black;
         float BOTTOM, bottom, left, right, TOP, top;
-        float alias = 8, brushWidth, prevX, prevY, previewX = 0, previewY = 0, ratio = 2f, size, strokeWidth = 96;
+        float alias = 8, backspaceX = 0, brushWidth, prevX, prevY, previewX = 0, previewY = 0, ratio = 2f, size, spaceX = 0, strokeWidth = 96;
         float column = 0, line = 0;
         ImageView ivCanvas, ivPreview;
         int charHeight = 64, charWidth = -1, handwriting = 16, HEIGHT, horizontalGap = 4, verticalGap = 0, WIDTH;
@@ -33,10 +33,32 @@ namespace Handwriting
         readonly Paint paint = new Paint() { StrokeWidth = 2 };
         SeekBar sbCharWidth;
 
-        private void BBackspace_Click(object sender, EventArgs e)
+        private void BBackspace_Touch(object sender, View.TouchEventArgs e)
         {
             if (bitmap == null)
                 Load();
+            switch (e.Event.Action)
+            {
+                case MotionEventActions.Down:
+                    backspaceX = e.Event.GetX();
+                    break;
+                case MotionEventActions.Move:
+                    float x = e.Event.GetX();
+                    Backspace((int)(backspaceX - x));
+                    backspaceX = x;
+                    backspace = true;
+                    break;
+                case MotionEventActions.Up:
+                    if (backspace)
+                        backspace = false;
+                    else
+                        Backspace(charHeight / 4);
+                    break;
+            }
+        }
+
+        void Backspace(int width)
+        {
             if (isWriting)
             {
                 isWriting = false;
@@ -48,19 +70,19 @@ namespace Handwriting
             else
             {
                 if (column > 0)
-                    column -= charHeight / 4;
+                    column -= width;
                 else
                 {
                     line -= charHeight;
-                    column = WIDTH - charHeight / 4; ;
+                    column = WIDTH - width;
                 }
                 if (bPaper == null)
                 {
-                    cText.DrawRect(column, line, column + charHeight / 4, line + charHeight, new Paint() { Color = Color.White });
+                    cText.DrawRect(column, line, column + width, line + charHeight, new Paint() { Color = Color.White });
                 }
                 else if (0 <= column && column < WIDTH)
                 {
-                    Bitmap b = Bitmap.CreateBitmap(bPaper, (int)column, (int)line, charHeight / 4, charHeight);
+                    Bitmap b = Bitmap.CreateBitmap(bPaper, (int)column, (int)line, width, charHeight);
                     cText.DrawBitmap(b, column, line, paint);
                     b.Dispose();
                 }
@@ -85,15 +107,35 @@ namespace Handwriting
             }
         }
 
-        private void BNext_Click(object sender, System.EventArgs e)
+        private void BNext_Touch(object sender, View.TouchEventArgs e)
         {
-            if (isWriting)
+            switch (e.Event.Action)
             {
-                Next();
-            }
-            else
-            {
-                isSelecting = !isSelecting;
+                case MotionEventActions.Move:
+                    int[] canvasLocation = new int[2];
+                    ivCanvas.GetLocationOnScreen(canvasLocation);
+                    if (e.Event.RawY < canvasLocation[1] + ivCanvas.Height)
+                    {
+                        if (bitmap == null)
+                            Load();
+                        if (isWriting)
+                            Next();
+                        int[] buttonLocation = new int[2];
+                        ((Button)sender).GetLocationOnScreen(buttonLocation);
+                        column = (buttonLocation[0] + e.Event.GetX() - canvasLocation[0]) - charHeight / 8;
+                        line = (buttonLocation[1] + e.Event.GetY() - canvasLocation[1]) - charHeight / 2;
+                        SetCursor(true);
+                        next = true;
+                    }
+                    break;
+                case MotionEventActions.Up:
+                    if (next)
+                        next = false;
+                    else if (isWriting)
+                        Next();
+                    else
+                        isSelecting = !isSelecting;
+                    break;
             }
         }
 
@@ -144,14 +186,34 @@ namespace Handwriting
             }
         }
 
-        private void BSpace_Click(object sender, EventArgs e)
+        private void BSpace_Touch(object sender, View.TouchEventArgs e)
         {
             if (bitmap == null)
                 Load();
             if (isWriting)
                 Next();
-            column += charHeight / 4;
-            SetCursor();
+            switch (e.Event.Action)
+            {
+                case MotionEventActions.Down:
+                    spaceX = e.Event.GetX();
+                    break;
+                case MotionEventActions.Move:
+                    float x = e.Event.GetX();
+                    column += x - spaceX;
+                    spaceX = x;
+                    space = true;
+                    SetCursor();
+                    break;
+                case MotionEventActions.Up:
+                    if (space)
+                        space = false;
+                    else
+                    {
+                        column += charHeight / 4;
+                        SetCursor();
+                    }
+                    break;
+            }
         }
         public static string GetDataColumn(Context context, Android.Net.Uri uri, string selection, string[] selectionArgs)
         {
@@ -389,13 +451,13 @@ namespace Handwriting
             llOptions = FindViewById<LinearLayout>(Resource.Id.ll_options);
             sbCharWidth = FindViewById<SeekBar>(Resource.Id.sb_char_width);
 
-            bBackspace.Click += BBackspace_Click;
+            bBackspace.Touch += BBackspace_Touch;
             bColor.Click += BColor_Click;
-            bNext.Click += BNext_Click;
+            bNext.Touch += BNext_Touch;
             FindViewById<Button>(Resource.Id.b_options).Click += BOptions_Click;
             FindViewById<Button>(Resource.Id.b_paper).Click += BPaper_Click;
             bReturn.Click += BReturn_Click;
-            bSpace.Click += BSpace_Click;
+            bSpace.Touch += BSpace_Touch;
             ivCanvas.Touch += IvCanvas_Touch;
             ivPreview.Touch += IvPreview_Touch;
             FindViewById<RadioButton>(Resource.Id.rb_char_width_auto).CheckedChange += RbCharWidthAuto_CheckedChange;

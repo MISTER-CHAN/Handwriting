@@ -217,7 +217,8 @@
                 android:layout_height="match_parent"
                 android:id="@+id/sb_char_height"
 		        android:layout_weight="1"
-                android:max="128"
+                android:max="256"
+                android:min="16"
                 android:progress="64" />
         </LinearLayout>
     </LinearLayout>
