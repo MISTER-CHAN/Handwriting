@@ -19,7 +19,7 @@ namespace Handwriting
     public class MainActivity : AppCompatActivity
     {
         Bitmap bBlank, bChar, bDisplay, bitmap, blackBrush, bPaper, bPreview, bPreviewPaper, brush, bText, redBrush;
-        bool autoNewline = false, backspace = false, isSelecting = false, isWriting = false, next = false, space = false;
+        bool autoNewline = false, backspace = false, isSelecting = false, isWriting = false, hasntLoaded = true, next = false, space = false;
         Button bBackspace, bColor, bNext, bReturn, bSpace;
         Canvas canvas, cBlank, cChar, cDisplay, cPreview, cText;
         Color brushColor = Color.Black;
@@ -35,8 +35,6 @@ namespace Handwriting
 
         private void BBackspace_Touch(object sender, View.TouchEventArgs e)
         {
-            if (bitmap == null)
-                Load();
             switch (e.Event.Action)
             {
                 case MotionEventActions.Down:
@@ -44,9 +42,13 @@ namespace Handwriting
                     break;
                 case MotionEventActions.Move:
                     float x = e.Event.GetX();
-                    Backspace((int)(backspaceX - x));
-                    backspaceX = x;
-                    backspace = true;
+                    int deltaX = (int)(backspaceX - x);
+                    if (deltaX != 0)
+                    {
+                        Backspace(deltaX);
+                        backspaceX = x;
+                        backspace = true;
+                    }
                     break;
                 case MotionEventActions.Up:
                     if (backspace)
@@ -82,7 +84,7 @@ namespace Handwriting
                 }
                 else if (0 <= column && column < WIDTH)
                 {
-                    Bitmap b = Bitmap.CreateBitmap(bPaper, (int)column, (int)line, width, charHeight);
+                    Bitmap b = Bitmap.CreateBitmap(bPaper, (int)column, (int)line, Math.Abs(width), charHeight);
                     cText.DrawBitmap(b, column, line, paint);
                     b.Dispose();
                 }
@@ -116,8 +118,6 @@ namespace Handwriting
                     ivCanvas.GetLocationOnScreen(canvasLocation);
                     if (e.Event.RawY < canvasLocation[1] + ivCanvas.Height)
                     {
-                        if (bitmap == null)
-                            Load();
                         if (isWriting)
                             Next();
                         int[] buttonLocation = new int[2];
@@ -165,8 +165,6 @@ namespace Handwriting
 
         private void BPaper_Click(object sender, EventArgs e)
         {
-            if (bitmap == null)
-                Load();
             Intent intent = new Intent(Intent.ActionPick, null);
             intent.SetType("image/*");// 设置文件类型
             StartActivityForResult(intent, 2); //2代表看相册
@@ -174,8 +172,6 @@ namespace Handwriting
 
         private void BReturn_Click(object sender, EventArgs e)
         {
-            if (bitmap == null)
-                Load();
             if (isWriting)
                 Next(true);
             else
@@ -188,8 +184,6 @@ namespace Handwriting
 
         private void BSpace_Touch(object sender, View.TouchEventArgs e)
         {
-            if (bitmap == null)
-                Load();
             if (isWriting)
                 Next();
             switch (e.Event.Action)
@@ -242,8 +236,6 @@ namespace Handwriting
 
         private void IvCanvas_Touch(object sender, View.TouchEventArgs e)
         {
-            if (bitmap == null)
-                Load();
             float x = e.Event.GetX(), y = e.Event.GetY();
             if (isSelecting)
             {
@@ -478,16 +470,21 @@ namespace Handwriting
 
         }
 
-        private void SbAlias_ProgressChanged(object sender, SeekBar.ProgressChangedEventArgs e)
-        {
-            alias = e.Progress;
-        }
-
         public override void OnRequestPermissionsResult(int requestCode, string[] permissions, [GeneratedEnum] Android.Content.PM.Permission[] grantResults)
         {
             Xamarin.Essentials.Platform.OnRequestPermissionsResult(requestCode, permissions, grantResults);
 
             base.OnRequestPermissionsResult(requestCode, permissions, grantResults);
+        }
+
+        public override void OnWindowFocusChanged(bool hasFocus)
+        {
+            base.OnWindowFocusChanged(hasFocus);
+            if (hasFocus && hasntLoaded)
+            {
+                hasntLoaded = false;
+                Load();
+            }
         }
 
         void Preview()
@@ -527,6 +524,11 @@ namespace Handwriting
                 charWidth = sbCharWidth.Progress;
                 Preview();
             }
+        }
+
+        private void SbAlias_ProgressChanged(object sender, SeekBar.ProgressChangedEventArgs e)
+        {
+            alias = e.Progress;
         }
 
         private void SNewline_CheckedChange(object sender, CompoundButton.CheckedChangeEventArgs e)
