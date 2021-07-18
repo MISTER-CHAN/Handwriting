@@ -20,17 +20,18 @@ namespace Handwriting
     {
         Bitmap bBlank, bChar, bDisplay, bitmap, blackBrush, bPaper, bPreview, bPreviewPaper, brush, bText, redBrush;
         bool autoNewline = false, backspace = false, isSelecting = false, isWriting = false, hasntLoaded = true, next = false, space = false;
-        Button bBackspace, bColor, bNext, bReturn, bSpace;
+        Button bBackspace, bColor, bNew, bNext, bReturn, bSpace;
         Canvas canvas, cBlank, cChar, cDisplay, cPreview, cText;
         Color brushColor = Color.Black;
         float BOTTOM, bottom, left, right, TOP, top;
-        float alias = 8, backspaceX = 0, brushWidth, prevX, prevY, previewX = 0, previewY = 0, ratio = 2f, size, spaceX = 0, strokeWidth = 96;
+        float alias = 8, backspaceX = 0, backspaceY = 0, brushWidth, prevX, prevY, previewX = 0, previewY = 0, ratio = 2f, size, spaceX = 0, spaceY = 0, strokeWidth = 96;
         float column = 0, line = 0;
         ImageView ivCanvas, ivPreview;
         int charHeight = 64, charWidth = -1, handwriting = 16, HEIGHT, horizontalGap = 4, verticalGap = 0, WIDTH;
         LinearLayout llOptions;
         Matrix matrix = new Matrix();
         readonly Paint paint = new Paint() { StrokeWidth = 2 };
+        RadioButton rbLeftToRight, rbUpToDown;
         SeekBar sbCharWidth;
 
         private void BBackspace_Touch(object sender, View.TouchEventArgs e)
@@ -39,15 +40,30 @@ namespace Handwriting
             {
                 case MotionEventActions.Down:
                     backspaceX = e.Event.GetX();
+                    backspaceY = e.Event.GetY();
                     break;
                 case MotionEventActions.Move:
-                    float x = e.Event.GetX();
-                    int deltaX = (int)(backspaceX - x);
-                    if (deltaX != 0)
+                    if (rbLeftToRight.Checked)
                     {
-                        Backspace(deltaX);
-                        backspaceX = x;
-                        backspace = true;
+                        float x = e.Event.GetX();
+                        int deltaX = (int)(backspaceX - x);
+                        if (deltaX != 0)
+                        {
+                            Backspace(deltaX);
+                            backspaceX = x;
+                            backspace = true;
+                        }
+                    }
+                    else
+                    {
+                        float y = e.Event.GetY();
+                        int deltaY = (int)(backspaceY - y);
+                        if (deltaY != 0)
+                        {
+                            Backspace(deltaY);
+                            backspaceY = y;
+                            backspace = true;
+                        }
                     }
                     break;
                 case MotionEventActions.Up:
@@ -59,7 +75,7 @@ namespace Handwriting
             }
         }
 
-        void Backspace(int width)
+        void Backspace(int size)
         {
             if (isWriting)
             {
@@ -71,22 +87,45 @@ namespace Handwriting
             }
             else
             {
-                if (column > 0)
-                    column -= width;
+                if (rbLeftToRight.Checked)
+                {
+                    if (column > 0)
+                        column -= size;
+                    else
+                    {
+                        line -= charHeight;
+                        column = WIDTH - size;
+                    }
+                    if (bPaper == null)
+                    {
+                        cText.DrawRect(column, line, column + size, line + charHeight, new Paint() { Color = Color.White });
+                    }
+                    else if (0 <= column && column < WIDTH)
+                    {
+                        Bitmap b = Bitmap.CreateBitmap(bPaper, (int)column, (int)line, Math.Abs(size), charHeight);
+                        cText.DrawBitmap(b, column, line, paint);
+                        b.Dispose();
+                    }
+                }
                 else
                 {
-                    line -= charHeight;
-                    column = WIDTH - width;
-                }
-                if (bPaper == null)
-                {
-                    cText.DrawRect(column, line, column + width, line + charHeight, new Paint() { Color = Color.White });
-                }
-                else if (0 <= column && column < WIDTH)
-                {
-                    Bitmap b = Bitmap.CreateBitmap(bPaper, (int)column, (int)line, Math.Abs(width), charHeight);
-                    cText.DrawBitmap(b, column, line, paint);
-                    b.Dispose();
+                    if (line > 0)
+                        line -= size;
+                    else
+                    {
+                        column += charHeight;
+                        line = HEIGHT - size;
+                    }
+                    if (bPaper == null)
+                    {
+                        cText.DrawRect(column, line, column + charHeight, line + size, new Paint() { Color = Color.White });
+                    }
+                    else if (0 <= line && line < HEIGHT)
+                    {
+                        Bitmap b = Bitmap.CreateBitmap(bPaper, (int)column, (int)line, charHeight, Math.Abs(size));
+                        cText.DrawBitmap(b, column, line, paint);
+                        b.Dispose();
+                    }
                 }
                 ivCanvas.SetImageBitmap(bText);
                 SetCursor();
@@ -107,6 +146,22 @@ namespace Handwriting
                 brushColor = Color.Black;
                 bColor.SetTextColor(Color.Black);
             }
+        }
+
+        private void BNew_Click(object sender, EventArgs e)
+        {
+            Toast.MakeText(this, "長按以確定作廢當前紙張並使用新紙張", ToastLength.Short).Show();
+        }
+
+        private void BNew_LongClick(object sender, View.LongClickEventArgs e)
+        {
+            bNew.Enabled = false;
+            if (bPaper == null)
+                cText.DrawColor(Color.White);
+            else
+                cText.DrawBitmap(bPaper, 0, 0, paint);
+            ivCanvas.SetImageBitmap(bText);
+            SetCursor();
         }
 
         private void BNext_Touch(object sender, View.TouchEventArgs e)
@@ -151,6 +206,7 @@ namespace Handwriting
                 llOptions.Visibility = ViewStates.Visible;
                 if (bPreviewPaper == null)
                     bPreviewPaper = Bitmap.CreateBitmap(ivCanvas.Width, ivCanvas.Height, Bitmap.Config.Argb8888);
+                bNew.Enabled = true;
             }
             else
             {
@@ -176,8 +232,16 @@ namespace Handwriting
                 Next(true);
             else
             {
-                column = 0;
-                line += charHeight + verticalGap;
+                if (rbLeftToRight.Checked)
+                {
+                    column = 0;
+                    line += charHeight + verticalGap;
+                }
+                else
+                {
+                    column -= charHeight + horizontalGap;
+                    line = 0;
+                }
                 SetCursor();
             }
         }
@@ -190,11 +254,21 @@ namespace Handwriting
             {
                 case MotionEventActions.Down:
                     spaceX = e.Event.GetX();
+                    spaceY = e.Event.GetY();
                     break;
                 case MotionEventActions.Move:
-                    float x = e.Event.GetX();
-                    column += x - spaceX;
-                    spaceX = x;
+                    if (rbLeftToRight.Checked)
+                    {
+                        float x = e.Event.GetX();
+                        column += x - spaceX;
+                        spaceX = x;
+                    }
+                    else
+                    {
+                        float y = e.Event.GetY();
+                        line += y - spaceY;
+                        spaceY = y;
+                    }
                     space = true;
                     SetCursor();
                     break;
@@ -203,7 +277,10 @@ namespace Handwriting
                         space = false;
                     else
                     {
-                        column += charHeight / 4;
+                        if (rbLeftToRight.Checked)
+                            column += charHeight / 4;
+                        else
+                            line += charHeight / 4;
                         SetCursor();
                     }
                     break;
@@ -349,34 +426,69 @@ namespace Handwriting
                     paint.SetXfermode(new PorterDuffXfermode(PorterDuff.Mode.Clear));
                     cChar.DrawPaint(paint);
                     paint.SetXfermode(null);
-                    int charWidth = 0;
-                    if (rotate)
+                    if (rbLeftToRight.Checked)
                     {
-                        charWidth = (int)((float)charHeight / WIDTH * (bottom - top));
-                        Bitmap b = Bitmap.CreateBitmap(bitmap, 0, 0, bitmap.Width, bitmap.Height, matrix, true);
-                        cChar.DrawBitmap(b, new Rect((int)top, 0, (int)bottom, HEIGHT), new Rect(0, 0, charWidth, (int)((float)charHeight / WIDTH * HEIGHT)), paint);
-                        b.Dispose();
+                        int charWidth = 0;
+                        if (rotate)
+                        {
+                            charWidth = (int)((float)charHeight / WIDTH * (bottom - top));
+                            Bitmap b = Bitmap.CreateBitmap(bitmap, 0, 0, bitmap.Width, bitmap.Height, matrix, true);
+                            cChar.DrawBitmap(b, new Rect(0, 0, WIDTH, HEIGHT), new Rect(0, 0, charHeight, (int)((float)charHeight / WIDTH * HEIGHT)), paint);
+                            b.Dispose();
+                        }
+                        else
+                        {
+                            charWidth = (int)((float)charHeight / WIDTH * (right - left));
+                            cChar.DrawBitmap(bitmap, new Rect(0, 0, WIDTH, HEIGHT), new Rect(0, 0, charHeight, (int)((float)charHeight / WIDTH * HEIGHT)), paint);
+                        }
+                        column += horizontalGap;
+                        if (autoNewline && column + charWidth > WIDTH)
+                        {
+                            line += charHeight + verticalGap;
+                            column = 0;
+                        }
+                        if (rotate)
+                            cText.DrawBitmap(bChar, column - top / WIDTH * charHeight, line, paint);
+                        else
+                            cText.DrawBitmap(bChar, column - left / WIDTH * charHeight, line - (float)charHeight / WIDTH * TOP, paint);
+                        column += this.charWidth == -1 ? charWidth : this.charWidth;
+                        if (!autoNewline && column > WIDTH)
+                        {
+                            line += charHeight + verticalGap;
+                            column = 0;
+                        }
                     }
                     else
                     {
-                        charWidth = (int)((float)charHeight / WIDTH * (right - left));
-                        cChar.DrawBitmap(bitmap, new Rect((int)left, 0, (int)right, HEIGHT), new Rect(0, 0, charWidth, (int)((float)charHeight / WIDTH * HEIGHT)), paint);
-                    }
-                    column += horizontalGap;
-                    if (autoNewline && column + charWidth > WIDTH)
-                    {
-                        line += charHeight + verticalGap;
-                        column = 0;
-                    }
-                    if (rotate)
-                        cText.DrawBitmap(bChar, column, line, paint);
-                    else
-                        cText.DrawBitmap(bChar, column, line - (float)charHeight / WIDTH * TOP, paint);
-                    column += this.charWidth == -1 ? charWidth : this.charWidth;
-                    if (!autoNewline && column > WIDTH)
-                    {
-                        line += charHeight + verticalGap;
-                        column = 0;
+                        int charHeight = 0;
+                        if (rotate)
+                        {
+                            charHeight = (int)((float)this.charHeight / WIDTH * (right - left));
+                            Bitmap b = Bitmap.CreateBitmap(bitmap, 0, 0, bitmap.Width, bitmap.Height, matrix, true);
+                            cChar.DrawBitmap(b, new Rect(0, 0, WIDTH, HEIGHT), new Rect(0, 0, this.charHeight, (int)((float)this.charHeight / WIDTH * HEIGHT)), paint);
+                            b.Dispose();
+                        }
+                        else
+                        {
+                            charHeight = (int)((float)this.charHeight / WIDTH * (bottom - top));
+                            cChar.DrawBitmap(bitmap, new Rect(0, 0, WIDTH, HEIGHT), new Rect(0, 0, this.charHeight, (int)((float)this.charHeight / WIDTH * HEIGHT)), paint);
+                        }
+                        line += verticalGap;
+                        if (autoNewline && line + charHeight > HEIGHT)
+                        {
+                            column -= (charWidth == -1 ? this.charHeight : charWidth) + horizontalGap;
+                            line = 0;
+                        }
+                        if (rotate)
+                            cText.DrawBitmap(bChar, column - top / WIDTH * charHeight, line, paint);
+                        else
+                            cText.DrawBitmap(bChar, column, line - top / WIDTH * this.charHeight, paint);
+                        line += charHeight;
+                        if (!autoNewline && line > HEIGHT)
+                        {
+                            column -= (charWidth == -1 ? this.charHeight : charWidth) + horizontalGap;
+                            line = 0;
+                        }
                     }
                 }
                 catch
@@ -435,16 +547,21 @@ namespace Handwriting
 
             bBackspace = FindViewById<Button>(Resource.Id.b_backspace);
             bColor = FindViewById<Button>(Resource.Id.b_color);
+            bNew = FindViewById<Button>(Resource.Id.b_new);
             bNext = FindViewById<Button>(Resource.Id.b_next);
             bReturn = FindViewById<Button>(Resource.Id.b_return);
             bSpace = FindViewById<Button>(Resource.Id.b_space);
             ivCanvas = FindViewById<ImageView>(Resource.Id.iv_canvas);
             ivPreview = FindViewById<ImageView>(Resource.Id.iv_preview);
             llOptions = FindViewById<LinearLayout>(Resource.Id.ll_options);
+            rbLeftToRight = FindViewById<RadioButton>(Resource.Id.rb_ltr);
+            rbUpToDown = FindViewById<RadioButton>(Resource.Id.rb_utd);
             sbCharWidth = FindViewById<SeekBar>(Resource.Id.sb_char_width);
 
             bBackspace.Touch += BBackspace_Touch;
             bColor.Click += BColor_Click;
+            bNew.Click += BNew_Click;
+            bNew.LongClick += BNew_LongClick;
             bNext.Touch += BNext_Touch;
             FindViewById<Button>(Resource.Id.b_options).Click += BOptions_Click;
             FindViewById<Button>(Resource.Id.b_paper).Click += BPaper_Click;

@@ -40,13 +40,47 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-		        android:layout_weight="1">
+		        android:layout_weight="1"
+                android:orientation="horizontal">
                 <Button
                     android:text="選擇..."
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:id="@+id/b_paper" />
+                <Button
+                    android:text="新紙"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/b_new" />
             </LinearLayout>
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+		    android:gravity="center"
+            android:orientation="horizontal">
+            <TextView
+                android:text="方向"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+		        android:layout_weight="5" />
+            <RadioGroup
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="horizontal">
+                <RadioButton
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checked="true"
+                    android:text="左至右"
+                    android:id="@+id/rb_ltr" />
+                <RadioButton
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="上至下"
+                    android:id="@+id/rb_utd" />
+            </RadioGroup>
         </LinearLayout>
         <LinearLayout
             android:layout_width="match_parent"
@@ -129,7 +163,7 @@
 		    android:gravity="center"
             android:orientation="horizontal">
             <TextView
-                android:text="列距"
+                android:text="左右間距"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
 		        android:layout_weight="5" />
@@ -138,7 +172,7 @@
                 android:layout_height="match_parent"
                 android:id="@+id/sb_horizontal_gap"
 		        android:layout_weight="1"
-                android:max="16"
+                android:max="32"
                 android:progress="4" />
         </LinearLayout>
         <LinearLayout
@@ -147,7 +181,7 @@
 		    android:gravity="center"
             android:orientation="horizontal">
             <TextView
-                android:text="行距"
+                android:text="上下間距"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
 		        android:layout_weight="5" />
@@ -237,7 +271,7 @@
             android:layout_height="match_parent"
             android:id="@+id/sb_stroke_width"
 		    android:layout_weight="1"
-            android:max="128"
+            android:max="192"
             android:progress="96" />
     </LinearLayout>
     <LinearLayout
